@@ -6,7 +6,7 @@ var app = builder.Build();
 
 app.Run(async (HttpContext context) =>
 {
-    if (context.Request.Method == "GET")
+    if (context.Request.Method == "GET") //READ
     {
         if (context.Request.Path.StartsWithSegments("/"))
         {
@@ -32,15 +32,35 @@ app.Run(async (HttpContext context) =>
         }
     }
 
-    else if(context.Request.Method == "POST")
+    else if(context.Request.Method == "POST") //CREATE
     {
         if(context.Request.Path.StartsWithSegments("/employees"))
         {
             using var reader = new StreamReader(context.Request.Body);
             var body = await reader.ReadToEndAsync();
-
             var employee = JsonSerializer.Deserialize<Employee>(body);
+
             EmployeesRepository.AddEmployee(employee);
+        }
+    }
+
+    else if (context.Request.Method == "PUT") //UPDATE
+    {
+        if (context.Request.Path.StartsWithSegments("/employees"))
+        {
+            using var reader = new StreamReader(context.Request.Body);
+            var body = await reader.ReadToEndAsync();
+            var employee = JsonSerializer.Deserialize<Employee>(body);
+
+            var result = EmployeesRepository.UpdateEmployee(employee);
+            if(result)
+            {
+                await context.Response.WriteAsync("Employee updated successfully.");
+            }
+            else
+            {
+                await context.Response.WriteAsync("Employee not found.");
+            }
         }
     }
 });
@@ -60,7 +80,26 @@ static class EmployeesRepository
     public static void AddEmployee(Employee? employee)
     {
         if(employee is not null)
+        {
             employees.Add(employee);
+        }            
+    }
+
+    public static bool UpdateEmployee(Employee? employee)
+    {
+        if(employee is not null)
+        {
+            var emp = employees.FirstOrDefault(x => x.Id == employee.Id);
+            if(emp is not null)
+            {
+                emp.Name = employee.Name;
+                emp.Position = employee.Position;
+                emp.Salary = employee.Salary;
+
+                return true;
+            }
+        }
+        return false;
     }
 }
 
