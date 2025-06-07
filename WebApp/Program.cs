@@ -32,9 +32,9 @@ app.Run(async (HttpContext context) =>
         }
     }
 
-    else if(context.Request.Method == "POST") //CREATE
+    else if (context.Request.Method == "POST") //CREATE
     {
-        if(context.Request.Path.StartsWithSegments("/employees"))
+        if (context.Request.Path.StartsWithSegments("/employees"))
         {
             using var reader = new StreamReader(context.Request.Body);
             var body = await reader.ReadToEndAsync();
@@ -53,7 +53,7 @@ app.Run(async (HttpContext context) =>
             var employee = JsonSerializer.Deserialize<Employee>(body);
 
             var result = EmployeesRepository.UpdateEmployee(employee);
-            if(result)
+            if (result)
             {
                 await context.Response.WriteAsync("Employee updated successfully.");
             }
@@ -63,6 +63,15 @@ app.Run(async (HttpContext context) =>
             }
         }
     }
+
+
+    /*  QUERY STRING  */
+    foreach (var key in context.Request.Query.Keys)
+    {
+        await context.Response.WriteAsync($"{key}: {context.Request.Query[key]}\r\n");
+    }
+
+    //await context.Response.WriteAsync(context.Request.QueryString.ToString());
 });
 
 app.Run();
