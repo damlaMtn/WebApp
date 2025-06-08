@@ -64,14 +64,37 @@ app.Run(async (HttpContext context) =>
         }
     }
 
-
-    /*  QUERY STRING  */
-    foreach (var key in context.Request.Query.Keys)
+    else if (context.Request.Method == "DELETE") //DELETE
     {
-        await context.Response.WriteAsync($"{key}: {context.Request.Query[key]}\r\n");
+        if (context.Request.Path.StartsWithSegments("/employees"))
+        {
+            if(context.Request.Query.ContainsKey("id"))
+            {
+                var id = context.Request.Query["id"];
+                if (int.TryParse(id, out int employeeId))
+                {
+                    var result = EmployeesRepository.DeleteEmployee(employeeId);
+                    if (result)
+                    {
+                        await context.Response.WriteAsync("Employee is deleted successfully.");
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsync("Employee not found.");
+                    }
+                }
+            }
+        }
     }
 
-    //await context.Response.WriteAsync(context.Request.QueryString.ToString());
+
+    ///*  QUERY STRING  */
+    //foreach (var key in context.Request.Query.Keys)
+    //{
+    //    await context.Response.WriteAsync($"{key}: {context.Request.Query[key]}\r\n");
+    //}
+
+    ////await context.Response.WriteAsync(context.Request.QueryString.ToString());
 });
 
 app.Run();
@@ -107,6 +130,17 @@ static class EmployeesRepository
 
                 return true;
             }
+        }
+        return false;
+    }
+
+    public static bool DeleteEmployee(int id)
+    {
+        var employee = employees.FirstOrDefault(x=> x.Id == id);
+        if(employee is not null)
+        {
+            employees.Remove(employee);
+            return true;
         }
         return false;
     }
