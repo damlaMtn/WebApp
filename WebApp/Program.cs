@@ -68,19 +68,26 @@ app.Run(async (HttpContext context) =>
     {
         if (context.Request.Path.StartsWithSegments("/employees"))
         {
-            if(context.Request.Query.ContainsKey("id"))
+            if (context.Request.Query.ContainsKey("id"))
             {
                 var id = context.Request.Query["id"];
                 if (int.TryParse(id, out int employeeId))
                 {
-                    var result = EmployeesRepository.DeleteEmployee(employeeId);
-                    if (result)
+                    if (context.Request.Headers["Authorization"] == "frank")
                     {
-                        await context.Response.WriteAsync("Employee is deleted successfully.");
+                        var result = EmployeesRepository.DeleteEmployee(employeeId);
+                        if (result)
+                        {
+                            await context.Response.WriteAsync("Employee is deleted successfully.");
+                        }
+                        else
+                        {
+                            await context.Response.WriteAsync("Employee not found.");
+                        }
                     }
                     else
                     {
-                        await context.Response.WriteAsync("Employee not found.");
+                        await context.Response.WriteAsync("You are not authorized to delete.");
                     }
                 }
             }
@@ -111,18 +118,18 @@ static class EmployeesRepository
     public static List<Employee> GetEmployees() => employees;
     public static void AddEmployee(Employee? employee)
     {
-        if(employee is not null)
+        if (employee is not null)
         {
             employees.Add(employee);
-        }            
+        }
     }
 
     public static bool UpdateEmployee(Employee? employee)
     {
-        if(employee is not null)
+        if (employee is not null)
         {
             var emp = employees.FirstOrDefault(x => x.Id == employee.Id);
-            if(emp is not null)
+            if (emp is not null)
             {
                 emp.Name = employee.Name;
                 emp.Position = employee.Position;
@@ -136,8 +143,8 @@ static class EmployeesRepository
 
     public static bool DeleteEmployee(int id)
     {
-        var employee = employees.FirstOrDefault(x=> x.Id == id);
-        if(employee is not null)
+        var employee = employees.FirstOrDefault(x => x.Id == id);
+        if (employee is not null)
         {
             employees.Remove(employee);
             return true;
