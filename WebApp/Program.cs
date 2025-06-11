@@ -6,22 +6,21 @@ var app = builder.Build();
 
 app.Run(async (HttpContext context) =>
 {
-    if (context.Request.Method == "GET") //READ
+    if (context.Request.Path.StartsWithSegments("/"))
     {
-        if (context.Request.Path.StartsWithSegments("/"))
+        await context.Response.WriteAsync($"The method is: {context.Request.Method}\r\n");
+        await context.Response.WriteAsync($"The URL is: {context.Request.Path}\r\n");
+
+        await context.Response.WriteAsync($"\r\nHeaders:\r\n");
+        foreach (var key in context.Request.Headers.Keys)
         {
-
-            await context.Response.WriteAsync($"The method is: {context.Request.Method}\r\n");
-            await context.Response.WriteAsync($"The URL is: {context.Request.Path}\r\n");
-
-            await context.Response.WriteAsync($"\r\nHeaders:\r\n");
-            foreach (var key in context.Request.Headers.Keys)
-            {
-                await context.Response.WriteAsync($"{key}: {context.Request.Headers[key]}\r\n");
-            }
+            await context.Response.WriteAsync($"{key}: {context.Request.Headers[key]}\r\n");
         }
+    }
 
-        else if (context.Request.Path.StartsWithSegments("/employees"))
+    else if (context.Request.Path.StartsWithSegments("/employees"))
+    {
+        if (context.Request.Method == "GET") //READ
         {
             var employees = EmployeesRepository.GetEmployees();
 
@@ -30,11 +29,8 @@ app.Run(async (HttpContext context) =>
                 await context.Response.WriteAsync($"{employee.Name}: {employee.Position}\r\n");
             }
         }
-    }
 
-    else if (context.Request.Method == "POST") //CREATE
-    {
-        if (context.Request.Path.StartsWithSegments("/employees"))
+        else if (context.Request.Method == "POST") //CREATE
         {
             using var reader = new StreamReader(context.Request.Body);
             var body = await reader.ReadToEndAsync();
@@ -42,11 +38,8 @@ app.Run(async (HttpContext context) =>
 
             EmployeesRepository.AddEmployee(employee);
         }
-    }
 
-    else if (context.Request.Method == "PUT") //UPDATE
-    {
-        if (context.Request.Path.StartsWithSegments("/employees"))
+        else if (context.Request.Method == "PUT") //UPDATE
         {
             using var reader = new StreamReader(context.Request.Body);
             var body = await reader.ReadToEndAsync();
@@ -62,11 +55,8 @@ app.Run(async (HttpContext context) =>
                 await context.Response.WriteAsync("Employee not found.");
             }
         }
-    }
 
-    else if (context.Request.Method == "DELETE") //DELETE
-    {
-        if (context.Request.Path.StartsWithSegments("/employees"))
+        else if (context.Request.Method == "DELETE") //DELETE
         {
             if (context.Request.Query.ContainsKey("id"))
             {
@@ -93,7 +83,6 @@ app.Run(async (HttpContext context) =>
             }
         }
     }
-
 
     ///*  QUERY STRING  */
     //foreach (var key in context.Request.Query.Keys)
