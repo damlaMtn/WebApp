@@ -8,14 +8,19 @@ app.Run(async (HttpContext context) =>
 {
     if (context.Request.Path.StartsWithSegments("/"))
     {
-        await context.Response.WriteAsync($"The method is: {context.Request.Method}\r\n");
-        await context.Response.WriteAsync($"The URL is: {context.Request.Path}\r\n");
+        context.Response.Headers["Content-Type"] = "text/html";
 
-        await context.Response.WriteAsync($"\r\nHeaders:\r\n");
+        await context.Response.WriteAsync($"The method is: {context.Request.Method}<br/>");
+        await context.Response.WriteAsync($"The Url is: {context.Request.Path}<br/>");
+
+        await context.Response.WriteAsync($"<b>Headers</b>:<br/>");
+
+        await context.Response.WriteAsync("<ul>");
         foreach (var key in context.Request.Headers.Keys)
         {
-            await context.Response.WriteAsync($"{key}: {context.Request.Headers[key]}\r\n");
+            await context.Response.WriteAsync($"<li><b>{key}</b>: {context.Request.Headers[key]}</li>");
         }
+        await context.Response.WriteAsync("</ul>");
     }
 
     else if (context.Request.Path.StartsWithSegments("/employees"))
@@ -24,10 +29,15 @@ app.Run(async (HttpContext context) =>
         {
             var employees = EmployeesRepository.GetEmployees();
 
+            context.Response.Headers["Content-Type"] = "text/html";
+            await context.Response.WriteAsync("<ul>");
             foreach (var employee in employees)
             {
-                await context.Response.WriteAsync($"{employee.Name}: {employee.Position}\r\n");
+                await context.Response.WriteAsync($"<li><b>{employee.Name}</b>: {employee.Position}</li>");
             }
+            await context.Response.WriteAsync("</ul>");
+
+            context.Response.StatusCode = 200;
         }
 
         else if (context.Request.Method == "POST") //CREATE
@@ -37,6 +47,9 @@ app.Run(async (HttpContext context) =>
             var employee = JsonSerializer.Deserialize<Employee>(body);
 
             EmployeesRepository.AddEmployee(employee);
+
+            context.Response.StatusCode = 201;
+            await context.Response.WriteAsync("Employee added successfully.");
         }
 
         else if (context.Request.Method == "PUT") //UPDATE
@@ -48,7 +61,9 @@ app.Run(async (HttpContext context) =>
             var result = EmployeesRepository.UpdateEmployee(employee);
             if (result)
             {
+                context.Response.StatusCode = 204;
                 await context.Response.WriteAsync("Employee updated successfully.");
+                return;
             }
             else
             {
@@ -66,6 +81,7 @@ app.Run(async (HttpContext context) =>
                     if (context.Request.Headers["Authorization"] == "frank")
                     {
                         var result = EmployeesRepository.DeleteEmployee(employeeId);
+
                         if (result)
                         {
                             await context.Response.WriteAsync("Employee is deleted successfully.");
@@ -101,7 +117,7 @@ static class EmployeesRepository
     {
         new Employee(1, "John Doe", "Engineer", 60000),
         new Employee(2, "Jane Smith", "Manager", 75000),
-        new Employee(3, "Sam Brown", "Technician", 50000),
+        new Employee(3, "Sam Brown", "Technician", 50000)
     };
 
     public static List<Employee> GetEmployees() => employees;
