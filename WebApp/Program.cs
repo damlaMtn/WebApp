@@ -44,12 +44,28 @@ app.Run(async (HttpContext context) =>
         {
             using var reader = new StreamReader(context.Request.Body);
             var body = await reader.ReadToEndAsync();
-            var employee = JsonSerializer.Deserialize<Employee>(body);
 
-            EmployeesRepository.AddEmployee(employee);
+            try
+            {
+                var employee = JsonSerializer.Deserialize<Employee>(body);
 
-            context.Response.StatusCode = 201;
-            await context.Response.WriteAsync("Employee added successfully.");
+                if (employee is null || employee.Id <= 0)
+                {
+                    context.Response.StatusCode = 400;
+                    return;
+                }
+
+                EmployeesRepository.AddEmployee(employee);
+
+                context.Response.StatusCode = 201;
+                await context.Response.WriteAsync("Employee added successfully.");
+            }
+            catch (Exception ex)
+            {
+                context.Response.StatusCode = 400;
+                await context.Response.WriteAsync(ex.ToString());
+                return;
+            }
         }
 
         else if (context.Request.Method == "PUT") //UPDATE
@@ -88,16 +104,23 @@ app.Run(async (HttpContext context) =>
                         }
                         else
                         {
+                            context.Response.StatusCode = 404;
                             await context.Response.WriteAsync("Employee not found.");
                         }
                     }
                     else
                     {
+                        context.Response.StatusCode = 401;
                         await context.Response.WriteAsync("You are not authorized to delete.");
                     }
                 }
             }
         }
+    }
+
+    else
+    {
+        context.Response.StatusCode = 404;
     }
 
     ///*  QUERY STRING  */
