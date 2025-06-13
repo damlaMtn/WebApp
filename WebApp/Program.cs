@@ -118,6 +118,10 @@ app.Run(async (HttpContext context) =>
         }
     }
 
+    else if (context.Request.Path.StartsWithSegments("/redirection"))
+    {
+        context.Response.Redirect("/employees");
+    }
     else
     {
         context.Response.StatusCode = 404;
