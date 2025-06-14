@@ -27,17 +27,45 @@ app.Run(async (HttpContext context) =>
     {
         if (context.Request.Method == "GET") //READ
         {
-            var employees = EmployeesRepository.GetEmployees();
 
-            context.Response.Headers["Content-Type"] = "text/html";
-            await context.Response.WriteAsync("<ul>");
-            foreach (var employee in employees)
+            if (context.Request.Query.ContainsKey("id"))
             {
-                await context.Response.WriteAsync($"<li><b>{employee.Name}</b>: {employee.Position}</li>");
-            }
-            await context.Response.WriteAsync("</ul>");
+                var id = context.Request.Query["id"];
+                if (int.TryParse(id, out int employeeId))
+                {
+                    //Get a particular employee's information
+                    var employee = EmployeesRepository.GetEmployeeById(employeeId);
 
-            context.Response.StatusCode = 200;
+                    context.Response.ContentType = "text/html";
+
+                    if(employee is not null)
+                    {
+                        await context.Response.WriteAsync($"Name: {employee.Name}<br/>");
+                        await context.Response.WriteAsync($"Position: {employee.Position}<br/>");
+                        await context.Response.WriteAsync($"Salary: {employee.Salary}<br/>");
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 404;
+                        await context.Response.WriteAsync("Employee not found.");
+                    }
+                }
+            }
+            else
+            {
+                //Get all of the employees' information
+                var employees = EmployeesRepository.GetEmployees();
+
+                context.Response.Headers["Content-Type"] = "text/html";
+                await context.Response.WriteAsync("<ul>");
+                foreach (var employee in employees)
+                {
+                    await context.Response.WriteAsync($"<li><b>{employee.Name}</b>: {employee.Position}</li>");
+                }
+                await context.Response.WriteAsync("</ul>");
+
+                context.Response.StatusCode = 200;
+            }
         }
 
         else if (context.Request.Method == "POST") //CREATE
@@ -148,6 +176,11 @@ static class EmployeesRepository
     };
 
     public static List<Employee> GetEmployees() => employees;
+
+    public static Employee? GetEmployeeById(int id)
+    {
+        return employees.FirstOrDefault(x => x.Id == id);
+    }
     public static void AddEmployee(Employee? employee)
     {
         if (employee is not null)
